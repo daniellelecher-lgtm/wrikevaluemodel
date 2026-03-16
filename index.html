@@ -204,13 +204,13 @@ const DRIVER_LIBRARY = [
       inputs:{people:8,hoursPerCycle:3,cyclesPerYear:52,reduction:0.60,fteCost:100000}, labels:{people:"Attendees",hoursPerCycle:"Hours / Meeting",cyclesPerYear:"Meetings / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
       kpis:["Number of recurring status meetings per week","Average meeting duration (minutes)"] },
     { id:"lib_search", name:"Information Search Time", type:"time", tip:"Time people spend searching for files, project status, or task details across fragmented tools.",
-      inputs:{people:10,hoursPerCycle:2,cyclesPerYear:52,reduction:0.65,fteCost:100000}, labels:{people:"People Searching",hoursPerCycle:"Hours / Week / Person",cyclesPerYear:"Weeks / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
+      inputs:{people:10,hoursPerCycle:2,cyclesPerYear:52,reduction:0.65,fteCost:100000}, labels:{people:"People Searching",hoursPerCycle:"Hours / Person / Cycle",cyclesPerYear:"Weeks / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
       kpis:["Time to find project status (minutes)","% of requests answered via self-service dashboards"] },
     { id:"lib_onboard", name:"Onboarding & Ramp Time", type:"time", tip:"Time to get new team members productive. Wrike templates reduce ramp-up.",
       inputs:{people:5,hoursPerCycle:20,cyclesPerYear:4,reduction:0.40,fteCost:100000}, labels:{people:"New Hires / Year",hoursPerCycle:"Extra Hours per Hire",cyclesPerYear:"Hire Cycles / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
       kpis:["New hire time-to-productivity (days)","Onboarding task completion rate (%)"] },
     { id:"lib_dupe", name:"Duplicate Data Entry", type:"time", tip:"Hours re-entering data across systems because tools don't talk to each other.",
-      inputs:{people:5,hoursPerCycle:3,cyclesPerYear:52,reduction:0.80,fteCost:100000}, labels:{people:"People Affected",hoursPerCycle:"Hours / Week / Person",cyclesPerYear:"Weeks / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
+      inputs:{people:5,hoursPerCycle:3,cyclesPerYear:52,reduction:0.80,fteCost:100000}, labels:{people:"People Affected",hoursPerCycle:"Hours / Person / Cycle",cyclesPerYear:"Weeks / Year",reduction:"% Reduction",fteCost:"Fully-Loaded FTE Cost"},
       kpis:["Number of systems requiring manual data entry","Data entry errors per month"] },
   ]},
   { cat:"Software Consolidation", items:[
@@ -404,21 +404,6 @@ function exportCSV(model, drivers, g, scenarios, scenarioResults, kpis) {
     r++;
   });
   
-  sc(ws1,r,0,"LEGACY TOOL COSTS",S.sec);sc(ws1,r,1,"",S.sec);sc(ws1,r,2,"",S.sec);r++;
-  aRef.legacyFull="Assumptions!$B$"+(r+1);
-  sc(ws1,r,0,"Current Annual Cost (do-nothing)",S.lbl);sc(ws1,r,1,g.legacyFullCost,S.inp$);sc(ws1,r,2,"What you'd pay if nothing changes",S.note);r++;
-  for(let i=0;i<H;i++){
-    aRef["phaseDown"+i]="Assumptions!$B$"+(r+1);
-    sc(ws1,r,0,"Year "+(i+1)+" Legacy Cost (with Wrike)",S.lbl);sc(ws1,r,1,g.legacyPhaseDown[i]||0,S.inp$);
-    const sav=g.legacyFullCost-(g.legacyPhaseDown[i]||0);
-    sc(ws1,r,2,"Savings: $"+Math.max(0,sav).toLocaleString(),S.note);r++;
-  }
-  r++;
-  
-  sc(ws1,r,0,"FTE AVOIDANCE",S.sec);sc(ws1,r,1,"",S.sec);sc(ws1,r,2,"",S.sec);r++;
-  aRef.fteAvoided="Assumptions!$B$"+(r+1);
-  sc(ws1,r,0,"FTEs Avoided / Year",S.lbl);sc(ws1,r,1,g.fteAvoided,S.inpD);sc(ws1,r,2,g.fteAvoidY1?"Included Y1 (prorated)":"Starts Year 2",S.note);r+=2;
-  
   sc(ws1,r,0,"WRIKE INVESTMENT",S.sec);sc(ws1,r,1,"",S.sec);sc(ws1,r,2,"",S.sec);r++;
   for(let i=0;i<H;i++){
     aRef["wrikeCost"+i]="Assumptions!$B$"+(r+1);
@@ -438,14 +423,8 @@ function exportCSV(model, drivers, g, scenarios, scenarioResults, kpis) {
   r++;
   
   sc(ws1,r,0,"SHARED ASSUMPTIONS",S.sec);sc(ws1,r,1,"",S.sec);sc(ws1,r,2,"",S.sec);r++;
-  aRef.fteCost="Assumptions!$B$"+(r+1);
-  sc(ws1,r,0,"Cost per FTE (FTE Avoidance only)",S.lbl);sc(ws1,r,1,g.fteCost,S.inp$);sc(ws1,r,2,"Value drivers use their own FTE cost",S.note);r++;
-  aRef.hrRate="Assumptions!$B$"+(r+1);
-  sc(ws1,r,0,"Hourly Rate (FTE Avoidance, derived)",S.lbl);sf(ws1,r,1,"="+aRef.fteCost.replace("Assumptions!","")+"/2080",S.hr);sc(ws1,r,2,"= FTE Avoidance cost / 2,080 hours",S.note);r++;
   aRef.adoptionRamp="Assumptions!$B$"+(r+1);
   sc(ws1,r,0,"Adoption Ramp (months)",S.lbl);sc(ws1,r,1,g.adoptionRamp,S.inpN);r++;
-  aRef.hcGrowth="Assumptions!$B$"+(r+1);
-  sc(ws1,r,0,"Headcount Growth",S.lbl);sc(ws1,r,1,g.headcountGrowth,S.inpP);r++;
   
   ws1["!ref"]="A1:C"+(r+1);
   XLSX.utils.book_append_sheet(wb,ws1,"Assumptions");
@@ -551,19 +530,6 @@ function exportCSV(model, drivers, g, scenarios, scenarioResults, kpis) {
   });
   
   r++;
-  sc(ws2,r,0,"LEGACY TOOL(S) SAVINGS",S.drv("#10b981"));r++;
-  sc(ws2,r,0,"Legacy Tool Savings",S.lbl);
-  for(let i=0;i<H;i++)sf(ws2,r,i+1,"="+aRef.legacyFull+"-"+aRef["phaseDown"+i],S.$);
-  sf(ws2,r,tCol,"=SUM("+cn(1)+(r+1)+":"+cn(H)+(r+1)+")",S.tot);
-  const lsRow=r;r+=2;
-  
-  sc(ws2,r,0,"FTE AVOIDANCE",S.drv("#059669"));r++;
-  sc(ws2,r,0,"FTE Avoidance",S.lbl);
-  if(g.fteAvoidY1)sf(ws2,r,1,"="+aRef.fteAvoided+"*"+aRef.fteCost+"*"+cn(1)+(afRow+1),S.$);
-  else sc(ws2,r,1,0,S.$);
-  for(let i=1;i<H;i++)sf(ws2,r,i+1,"="+aRef.fteAvoided+"*"+aRef.fteCost,S.$);
-  sf(ws2,r,tCol,"=SUM("+cn(1)+(r+1)+":"+cn(H)+(r+1)+")",S.tot);
-  const feRow=r;r+=2;
 
   /* TOTAL HOURS REGAINED - purple summary row */
   if(hRows.length>0){
@@ -581,7 +547,7 @@ function exportCSV(model, drivers, g, scenarios, scenarioResults, kpis) {
   /* TOTAL BENEFIT - highlighted */
   sc(ws2,r,0,"TOTAL BENEFIT",{font:{bold:true,sz:10,color:{rgb:"059669"},name:"Arial"},fill:{fgColor:{rgb:"F0FDF4"}}});
   for(let i=0;i<H;i++){
-    const parts=[...dRows.map(dr=>cn(i+1)+(dr+1)),cn(i+1)+(lsRow+1),cn(i+1)+(feRow+1)];
+    const parts=[...dRows.map(dr=>cn(i+1)+(dr+1))];
     sf(ws2,r,i+1,"="+parts.join("+"),S.totGbg);
   }
   sf(ws2,r,tCol,"=SUM("+cn(1)+(r+1)+":"+cn(H)+(r+1)+")",S.totGbg);
@@ -952,8 +918,6 @@ async function exportWord(model, drivers, g) {
     const leverColors = ["#00E05C","#37CEBA","#FFCF00","#A78BFA","#F97316","#14B8A6","#EC4899","#6366F1"];
     const allLevers = [
       ...el.map((d,i) => ({ name:d.name, val:model.lt[d.id]||0, color:leverColors[i%leverColors.length] })),
-      ...(model.lt._fte>0 ? [{ name:"FTE Avoidance", val:model.lt._fte, color:"#10B981" }] : []),
-      ...(model.lt._l4>0  ? [{ name:"Platform Consolidation", val:model.lt._l4, color:"#059669" }] : []),
     ].filter(l=>l.val>0).sort((a,b)=>b.val-a.val).slice(0,8);
 
     const W=900, H=420, padL=180, padR=40, padT=40, padB=60;
@@ -1164,8 +1128,6 @@ async function exportWord(model, drivers, g) {
     const leverColors = ["#00E05C","#37CEBA","#FFCF00","#A78BFA","#F97316","#14B8A6","#EC4899","#6366F1"];
     const allLevers = [
       ...el.map((d,i)=>({name:d.name, val:model.lt[d.id]||0})),
-      ...(model.lt._fte>0?[{name:"FTE Avoidance",val:model.lt._fte}]:[]),
-      ...(model.lt._l4>0?[{name:"Platform Consolidation",val:model.lt._l4}]:[]),
     ].filter(l=>l.val>0).sort((a,b)=>b.val-a.val);
 
     const leverRows = allLevers.map(l=>[l.name, fmtK(l.val)]);
@@ -1224,7 +1186,7 @@ async function exportWord(model, drivers, g) {
       { before:"Reactive decisions", beforeDesc:"Leadership acts on stale data. Issues surface too late to course-correct.", after:"Proactive management", afterDesc:"Predictive insights surface risks early — before they become delays." },
       { before:"Scale requires headcount", beforeDesc:"Growth means more hires. No efficiency multiplier from existing investment.",
         after:"Scale without adding headcount",
-        afterDesc: model.lt._fte>0 ? `${fmtK(model.lt._fte)} in FTE costs avoided over ${H} years. Automation and templates absorb growth.` : "[X] FTEs in avoided headcount costs. Automation and templates absorb growth." },
+        afterDesc: "[X] FTEs in avoided headcount costs. Automation and templates absorb growth." },
     ];
 
     return [
@@ -1261,8 +1223,6 @@ async function exportWord(model, drivers, g) {
 
     const benRows = [
       ...el.map(d => [d.name, ...model.years.map(y=>fmt(y.lv[d.id]||0)), fmt(model.lt[d.id]||0)]),
-      ...(model.lt._fte>0?[["FTE Avoidance", ...model.years.map(y=>fmt(y.fteSav)), fmt(model.lt._fte)]]: []),
-      ...(model.lt._l4>0?[["Platform Consolidation", ...model.years.map(y=>fmt(y.legacySav)), fmt(model.lt._l4)]]: []),
     ];
     const totalBenRow = [{text:"Total Benefit",total:true}, ...model.years.map(y=>({text:fmt(y.totalBenefit),total:true})), {text:fmt(model.tb),total:true}];
     const netRow      = [{text:netShort,total:true}, ...model.years.map(y=>({text:fmt(y.totalBenefit-y.totalCost),total:true})), {text:fmtK(netVal),total:true}];
@@ -1341,7 +1301,7 @@ async function exportWord(model, drivers, g) {
     gap(120,0),
     h2("Talent & Organizational Scale"),
     ...(model.totalHours>0 ? [
-      bodyP(`Wrike is projected to reclaim ${fmtHours(model.totalHours)} of team capacity over ${H} years — equivalent to ${fmtK(model.totalHours * ((el.length?el.reduce((s,d)=>s+(d.inputs.fteCost!=null?d.inputs.fteCost:100000),0)/el.length:g.fteCost)/2080))} in staff time at average fully-loaded cost. This capacity is already reflected in the Net Value figure.`),
+      bodyP(`Wrike is projected to reclaim ${fmtHours(model.totalHours)} of team capacity over ${H} years — equivalent to ${fmtK(model.totalHours * ((el.length?el.reduce((s,d)=>s+(d.inputs.fteCost!=null?d.inputs.fteCost:100000),0)/el.length:100000)/2080))} in staff time at average fully-loaded cost. This capacity is already reflected in the Net Value figure.`),
     ] : [
       placeholder("Talent Impact","e.g., '[X] FTEs spend [X]% of time on admin coordination. Reclaiming that = [X] FTEs of capacity without additional headcount.'"),
     ]),
@@ -1361,17 +1321,13 @@ async function exportWord(model, drivers, g) {
       ["Customer", cName],
       ["Analysis Period", `${H} years`],
       ["Discount Rate", useNPV ? pct(g.discountRate||0) : "Not applied"],
-      ["FTE Fully-Loaded Cost", `${fmtK(g.fteCost||0)} / year`],
       ["Adoption Ramp", `${g.adoptionRamp||0} months`],
-      ["Headcount Growth", pct(g.headcountGrowth||0)+" / year"],
-      ["FTE Avoidance", g.fteAvoided>0 ? `${g.fteAvoided} FTEs` : "Not modeled"],
-      ["Legacy Platform Phase-Down", g.legacyFullCost>0 ? `${fmtK(g.legacyFullCost)} base` : "Not modeled"],
     ];
 
     const driverRows = el.map(d => [d.name, d.type, fmtK(model.lt[d.id]||0)]);
 
     const scenRows = [
-      ["Conservative (lower adoption, no FTE avoidance)", "[VALUE]", "[X]%", "[X] mo"],
+      ["Conservative (lower adoption)", "[VALUE]", "[X]%", "[X] mo"],
       ["Base Case (current model inputs)",                fmtK(model.npv), pct(model.roi), model.pbm?`${model.pbm} mo`:"N/A"],
       ["Aggressive (full adoption, all levers)",          "[VALUE]", "[X]%", "[X] mo"],
     ];
@@ -1393,7 +1349,6 @@ async function exportWord(model, drivers, g) {
         ["NPV (Net Present Value)","Future cash flows discounted back to today at the stated discount rate."],
         ["ROI","(Total Benefit − Total Cost) ÷ Total Cost, as a percentage."],
         ["Adoption Ramp","Months before full productivity benefits are assumed to accrue."],
-        ["FTE Avoidance","Headcount growth absorbed by the platform rather than additional hires."],
       ],[3000,6360]),
     ];
   };
@@ -1613,9 +1568,7 @@ function exportPPTX(model, drivers, g) {
     const paramLines = [
       `Time Horizon: ${H} years`,
       `Discount Rate: ${pct(g.discountRate || 0.08)}`,
-      `FTE Fully-Loaded Cost: ${fmtK(g.fteCost || 0)}/yr`,
       `Adoption Ramp: ${g.adoptionRamp || 0} months`,
-      `Headcount Growth: ${pct(g.headcountGrowth || 0)}/yr`,
     ];
     s.addText(paramLines.map((l, i) => ({ text: l, options: { breakLine: i < paramLines.length - 1 } })),
       { x: 6.7, y: 4.1, w: 3.0, h: 1.05, fontSize: 7.5, color: C.muted, fontFace: "Arial", lineSpacingMultiple: 1.3, margin: 0 });
@@ -1657,8 +1610,6 @@ function exportPPTX(model, drivers, g) {
     const leverColors = ["00E05C", "37CEBA", "FFCF00", "EF4444", "A78BFA", "F97316", "14B8A6", "EC4899"];
     const allLevers = [
       ...el.map(d => ({ name: d.name, val: model.lt[d.id] || 0 })),
-      ...(model.lt._l4 > 0 ? [{ name: "Platform Consolidation", val: model.lt._l4 }] : []),
-      ...(model.lt._fte > 0 ? [{ name: "FTE Avoidance", val: model.lt._fte }] : []),
     ].filter(l => l.val > 0).sort((a, b) => b.val - a.val);
 
     const maxVal = allLevers.length > 0 ? allLevers[0].val : 1;
@@ -1752,7 +1703,7 @@ function exportPPTX(model, drivers, g) {
       { before: "Fragmented tools", beforeDesc: "Manual data assembly across disconnected systems creates reporting delays and blind spots.", after: "Real-time visibility", afterDesc: "Dashboards connected to OKRs give leadership instant status across all teams." },
       { before: "No single source of truth", beforeDesc: "Each team tracks differently — version conflicts and rework are constant.", after: "Unified platform", afterDesc: "One system of record eliminates duplicated effort and version chaos." },
       { before: "Reactive decisions", beforeDesc: "Leadership acts on stale data. Issues surface too late to course-correct.", after: "Proactive management", afterDesc: "Predictive insights surface risks early — before they become delays." },
-      { before: "Scale requires headcount", beforeDesc: "Growth means more hires. No efficiency multiplier from existing investment.", after: "Scale without adding headcount", afterDesc: `Automation and templates absorb growth. ${model.lt._fte > 0 ? fmtK(model.lt._fte) + " in FTE costs avoided." : "[X] FTEs avoided annually."}` },
+      { before: "Scale requires headcount", beforeDesc: "Growth means more hires. No efficiency multiplier from existing investment.", after: "Scale without adding headcount", afterDesc: "Automation and templates absorb growth. [X] FTEs avoided annually." },
     ];
 
     // Column headers
@@ -1795,8 +1746,6 @@ function exportPPTX(model, drivers, g) {
     // Lever cards
     const leverData = [
       ...el.map((d, idx) => ({ name: d.name, val: model.lt[d.id] || 0, color: leverColors[idx % 8] })),
-      ...(model.lt._l4 > 0 ? [{ name: "Platform Consolidation", val: model.lt._l4, color: "10B981" }] : []),
-      ...(model.lt._fte > 0 ? [{ name: "FTE Avoidance", val: model.lt._fte, color: "059669" }] : []),
     ].filter(l => l.val > 0);
 
     const leverColors8 = ["00E05C", "37CEBA", "FFCF00", "A78BFA", "F97316", "14B8A6", "EC4899", "6366F1"];
@@ -1920,18 +1869,6 @@ function exportPPTX(model, drivers, g) {
       tableRows.push(tr);
     });
 
-    if (model.lt._l4 > 0) {
-      const tr = [{ text: "Platform Consolidation", options: { color: C.muted, fill: { color: C.bgCard } } }];
-      model.years.forEach(y => tr.push({ text: fmt(y.legacySav), options: { align: "right", color: C.green, fill: { color: C.bgCard } } }));
-      tr.push({ text: fmt(model.lt._l4), options: { align: "right", bold: true, color: C.green, fill: { color: C.bgCard } } });
-      tableRows.push(tr);
-    }
-    if (model.lt._fte > 0) {
-      const tr = [{ text: "FTE Avoidance", options: { color: C.muted, fill: { color: C.bgCard } } }];
-      model.years.forEach(y => tr.push({ text: fmt(y.fteSav), options: { align: "right", color: C.green, fill: { color: C.bgCard } } }));
-      tr.push({ text: fmt(model.lt._fte), options: { align: "right", bold: true, color: C.green, fill: { color: C.bgCard } } });
-      tableRows.push(tr);
-    }
 
     const totalBenRow = [{ text: "Total Benefit", options: { bold: true, color: C.green, fill: { color: "0A2A12" } } }];
     model.years.forEach(y => totalBenRow.push({ text: fmt(y.totalBenefit), options: { align: "right", bold: true, color: C.green, fill: { color: "0A2A12" } } }));
@@ -2090,7 +2027,7 @@ function exportPPTX(model, drivers, g) {
     addTitle(s, "Appendix");
 
     const sections = [
-      { letter: "A", title: "Value Model Assumptions", items: ["All lever inputs and formula types", "Adoption ramp methodology", `FTE fully-loaded cost basis: ${fmt(g.fteCost || 0)}/yr`, `Discount rate: ${pct(g.discountRate || 0.08)} · Horizon: ${H} years`] },
+      { letter: "A", title: "Value Model Assumptions", items: ["All lever inputs and formula types", "Adoption ramp methodology", `Discount rate: ${pct(g.discountRate || 0.08)} · Horizon: ${H} years`] },
       { letter: "B", title: "Sensitivity Scenarios", items: ["Conservative: lower reduction rates, no FTE avoidance", "Base Case: current model inputs", "Aggressive: full adoption, all levers enabled", "No FTE avoidance scenario"] },
       { letter: "C", title: "Reference Customers", items: ["Club Car — Manufacturing / PMO", "Johnson & Johnson — Healthcare / PM", "Academy Sports — Retail / Marketing", "Danone — CPG / Cross-functional"] },
       { letter: "D", title: "Glossary", items: ["NPV: Net Present Value (future cash flows discounted to today)", "ROI: (Total Benefit − Total Cost) / Total Cost", "Adoption ramp: months before full productivity benefit accrues"] },
@@ -2159,10 +2096,10 @@ function Inp({label,value,onChange,prefix,suffix,step=1,min=0,help,placeholder,h
     </div>
   </div>);
 }
-function Sld({label,value,onChange,min,max,step=1,format="num",help}){const d=format==="pct"?pct(value):value;return(
+function Sld({label,value,onChange,min,max,step=1,format="num",help,helpAlignRight}){const d=format==="pct"?pct(value):value;return(
   <div style={{marginBottom:7}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-      <div style={{display:"flex",alignItems:"center"}}><label style={{fontSize:10,fontWeight:600,color:"#64748b"}}>{label}</label>{help&&<Tip text={help}/>}</div>
+      <div style={{display:"flex",alignItems:"center"}}><label style={{fontSize:10,fontWeight:600,color:"#64748b"}}>{label}</label>{help&&<Tip text={help} alignRight={helpAlignRight}/>}</div>
       <span style={{fontSize:12,fontWeight:700,color:"#1e293b",fontFamily:"'Montserrat',sans-serif"}}>{d}</span>
     </div>
     <input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))} style={{width:"100%",accentColor:"#3b82f6",height:3}}/>
@@ -2276,12 +2213,12 @@ function DriverLibraryModal({onAdd,onClose,existingIds}){
       {selCount>0&&<span style={{background:"#3b82f6",color:"white",borderRadius:12,padding:"3px 10px",fontSize:11,fontWeight:700}}>{selCount} selected</span>}
     </div>
     {DRIVER_LIBRARY.map(cat=>(<div key={cat.cat} style={{marginBottom:12}}>
-      <div style={{fontSize:10,fontWeight:700,color:CAT_COLORS[cat.cat]||"#475569",textTransform:"uppercase",letterSpacing:"0.04em",marginBottom:6,borderBottom:`2px solid ${CAT_COLORS[cat.cat]||"#e2e8f0"}`,paddingBottom:3}}>{cat.cat}</div>
+      <div style={{fontSize:10,fontWeight:700,fontFamily:"'Montserrat',sans-serif",color:CAT_COLORS[cat.cat]||"#475569",textTransform:"uppercase",letterSpacing:"0.04em",marginBottom:6,borderBottom:`2px solid ${CAT_COLORS[cat.cat]||"#e2e8f0"}`,paddingBottom:3}}>{cat.cat}</div>
       {cat.items.map(item=>{const exists=existingIds.includes(item.id);const sel=selected[item.id];return(
-        <button key={item.id} onClick={()=>!exists&&toggle(item.id)} disabled={exists} style={{display:"flex",alignItems:"flex-start",gap:8,width:"100%",padding:"7px 10px",marginBottom:3,border:sel?"2px solid #3b82f6":"1px solid #e2e8f0",borderRadius:6,cursor:exists?"default":"pointer",background:sel?"#eff6ff":exists?"#f8fafc":"white",textAlign:"left",opacity:exists?0.5:1}}>
+        <button key={item.id} onClick={()=>!exists&&toggle(item.id)} disabled={exists} style={{display:"flex",alignItems:"flex-start",gap:8,width:"100%",padding:"7px 10px",marginBottom:3,border:sel?"2px solid #3b82f6":"1px solid #e2e8f0",borderRadius:6,cursor:exists?"default":"pointer",background:sel?"#eff6ff":exists?"#f8fafc":"white",textAlign:"left",opacity:exists?0.5:1,fontFamily:"'Montserrat',sans-serif"}}>
           <div style={{width:16,height:16,borderRadius:4,border:sel?"none":"1.5px solid #cbd5e1",background:sel?"#3b82f6":"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
             {sel&&<span style={{color:"white",fontSize:10,fontWeight:700}}>{"\u2713"}</span>}</div>
-          <div style={{flex:1}}>
+          <div style={{flex:1,fontFamily:"'Montserrat',sans-serif"}}>
             <div style={{fontSize:12,fontWeight:600,color:"#1e293b"}}>{item.name}{exists&&<span style={{fontSize:9,color:"#94a3b8"}}> (added)</span>}</div>
             <div style={{fontSize:10,color:"#64748b",marginTop:1}}>{item.tip}</div>
             <div style={{fontSize:9,color:"#94a3b8",marginTop:2}}>Formula: {FORMULA_TYPES.find(f=>f.v===item.type)?.l}</div>
@@ -2313,7 +2250,7 @@ function EditScenarioModal({scenario,onSave,onClose,onDelete,drivers,globals}){
       <input value={s.desc} onChange={e=>setS({...s,desc:e.target.value})} style={{width:"100%",padding:"8px 10px",border:"1px solid #cbd5e1",borderRadius:6,fontSize:12,fontFamily:"'Montserrat',sans-serif",outline:"none",boxSizing:"border-box"}}/></div>
     <label style={{fontSize:11,fontWeight:700,color:"#3b82f6",display:"block",marginBottom:6}}>Global Overrides</label>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
-      {[{k:"adoptionRamp",l:"Ramp (mo)",s:1},{k:"fteAvoided",l:"FTEs Avoided",s:0.5}].map(f=>(<div key={f.k}><label style={{fontSize:9,fontWeight:600,color:"#64748b"}}>{f.l}</label>
+      {[{k:"adoptionRamp",l:"Ramp (mo)",s:1}].map(f=>(<div key={f.k}><label style={{fontSize:9,fontWeight:600,color:"#64748b"}}>{f.l}</label>
         <input type="number" step={f.s} value={s.overrides.globalOverrides[f.k]!=null?s.overrides.globalOverrides[f.k]:""} placeholder={String(globals[f.k])}
           onChange={e=>{const v=e.target.value;const go={...s.overrides.globalOverrides};if(v==="")delete go[f.k];else go[f.k]=Number(v);setS({...s,overrides:{...s.overrides,globalOverrides:go}});}}
           style={{width:"100%",padding:"4px 6px",border:"1px solid #cbd5e1",borderRadius:4,fontSize:11,fontFamily:"'Montserrat',sans-serif",outline:"none",boxSizing:"border-box"}}/></div>))}
@@ -2384,7 +2321,6 @@ function App(){
   const editMode=true;
   const ug=(k)=>(v)=>setG(p=>({...p,[k]:v}));
   const ts=(id)=>setOpenSections(p=>({...p,[id]:!p[id]}));
-  const setPhaseDown=(yr,val)=>setG(p=>{const a=[...p.legacyPhaseDown];a[yr]=val;return{...p,legacyPhaseDown:a};});
   const setWrikeCost=(yr,val)=>setG(p=>{const a=[...p.wrikeCostByYear];a[yr]=val;return{...p,wrikeCostByYear:a};});
 
   const saveModel=()=>{
@@ -2404,6 +2340,12 @@ function App(){
     setG({...DEFAULT_GLOBALS,...(m.g||{})});setKpis(m.k||[]);setRemovedKpis(m.r||{});
     const ns={};(dList).forEach((d,i)=>ns[d.id]=i===0);setOpenSections(ns);
     setShowModels(false);
+  };
+  const startNewModel=()=>{
+    if(drivers.length>0||(g.customerName&&g.customerName.trim())){if(!window.confirm("Start a new model? The current model will be cleared from this tab. Save it in My Models first if you need to keep it."))return;}
+    setDrivers([]);setDisplayOrder([]);setG({...DEFAULT_GLOBALS});setKpis([]);setRemovedKpis({});setOpenSections({});
+    const base=window.location.origin+window.location.pathname;window.history.replaceState({},"",base);
+    setToast("New model started — share link will be unique for this customer.");
   };
   const deleteModel=(idx)=>{
     const updated=savedModels.filter((_,i)=>i!==idx);
@@ -2435,23 +2377,19 @@ function App(){
     for(let y=1;y<=g.horizon;y++){
       const af=y===1?Math.max(0,(12-g.adoptionRamp)/12):1;
       const lv={};const lh={};let tlb=0;el.forEach(d=>{const v=calcDriver(d,af,y);lv[d.id]=v;tlb+=v;lh[d.id]=calcDriverHours(d,af);});
-      const ssSav=g.legacySavingsEnabled?(g.legacyFullCost-(g.legacyPhaseDown[y-1]||0)):0;
-      const fteSav=g.fteAvoidanceEnabled?(y===1?(g.fteAvoidY1?g.fteAvoided*g.fteCost*af:0):g.fteAvoided*g.fteCost):0;
-      const legacySav=Math.max(0,ssSav);
-      const l4=legacySav+fteSav;
+      const l4=0;
       const wLicCost=g.wrikeCostByYear[y-1]||0;
       const wProf=y===1?g.wrikeProfServices:0;const wMig=y===1?g.wrikeMigration:0;
       const wSKUs=g.wrikeAdditionalSKUs.reduce((a,s)=>a+(s.oneTime?(y===1?s.annual||0:0):s.annual||0),0);
       const skuByLine=g.wrikeAdditionalSKUs.map(s=>({name:s.name,cost:s.oneTime?(y===1?s.annual||0:0):s.annual||0}));
       const totalCost=wLicCost+wProf+wMig+wSKUs;const totalBenefit=tlb+l4;const net=totalBenefit-totalCost;
       const df=1/Math.pow(1+dr,y);
-      years.push({year:y,af,lv,lh,l4,legacySav,totalCost,totalBenefit,net,df,pvNet:net*df,wLicCost,wProf,wMig,wSKUs,skuByLine,ssSav,fteSav});
+      years.push({year:y,af,lv,lh,l4,totalCost,totalBenefit,net,df,pvNet:net*df,wLicCost,wProf,wMig,wSKUs,skuByLine});
     }
     const npv=years.reduce((a,y)=>a+y.pvNet,0);const tc=years.reduce((a,y)=>a+y.totalCost,0);const tb=years.reduce((a,y)=>a+y.totalBenefit,0);
     const roi=tc>0?(tb-tc)/tc:0;
-    let cum=0,pbm=null;for(const y of years){const mn=y.net/12;for(let m=1;m<=12;m++){cum+=mn;if(cum>=0&&!pbm)pbm=(y.year-1)*12+m;}}
-    const lt={};el.forEach(d=>{lt[d.id]=years.reduce((a,y)=>a+(y.lv[d.id]||0),0);});lt._l4=g.legacySavingsEnabled?years.reduce((a,y)=>a+y.legacySav,0):0;
-    lt._fte=g.fteAvoidanceEnabled?years.reduce((a,y)=>a+y.fteSav,0):0;
+    const annualNet=tb-tc;const monthlyNet=annualNet/(g.horizon*12);const pbm=(tc>0&&monthlyNet>0)?Math.round(tc/monthlyNet):null;
+    const lt={};el.forEach(d=>{lt[d.id]=years.reduce((a,y)=>a+(y.lv[d.id]||0),0);});
     const lth={};el.forEach(d=>{lth[d.id]=years.reduce((a,y)=>a+(y.lh[d.id]||0),0);});
     const totalHours=el.reduce((a,d)=>a+(lth[d.id]||0),0);
     const totalProjectDays=el.filter(d=>d.type==="project_delay").reduce((a,d)=>{
@@ -2470,8 +2408,7 @@ function App(){
       for(let y=1;y<=sg.horizon;y++){
         const af=y===1?Math.max(0,(12-sg.adoptionRamp)/12):1;
         let lb=0;sD.forEach(d=>lb+=calcDriver(d,af,y));
-        const ssS=sg.legacySavingsEnabled?(sg.legacyFullCost-(sg.legacyPhaseDown?sg.legacyPhaseDown[y-1]||0:0)):0;const fS=sg.fteAvoidanceEnabled?(y===1?(sg.fteAvoidY1?sg.fteAvoided*sg.fteCost*af:0):sg.fteAvoided*sg.fteCost):0;
-        const b=lb+ssS+fS;const wC=sg.wrikeCostByYear[y-1]||0;
+        const b=lb;const wC=sg.wrikeCostByYear[y-1]||0;
         const skus=sg.wrikeAdditionalSKUs?sg.wrikeAdditionalSKUs.reduce((a,s)=>a+(s.annual||0),0):0;
         const c=wC+(y===1?sg.wrikeProfServices+sg.wrikeMigration:0)+skus;tC+=c;tB+=b;npvS+=(b-c)/Math.pow(1+dr,y);
       }
@@ -2480,7 +2417,7 @@ function App(){
   },[drivers,g,scenarios]);
 
   const el=drivers.filter(d=>d.enabled);
-  const maxLev=el.length>0?Math.max(...el.map(d=>model.lt[d.id]||0),model.lt._l4||0,model.lt._fte||0):Math.max(model.lt._l4||1,model.lt._fte||0);
+  const maxLev=el.length>0?Math.max(...el.map(d=>model.lt[d.id]||0)):1;
   const TC={drivers:"#8b5cf6",yearly:"#3b82f6",sensitivity:"#f59e0b"};
   const tabs=[{id:"drivers",label:"Value Drivers"},{id:"yearly",label:"Year-by-Year"}];
 
@@ -2493,6 +2430,7 @@ function App(){
             <div style={{fontSize:10,color:"white"}}>{g.horizon}-Year Projection</div></div>
         </div>
         <div style={{display:"flex",gap:6}}>
+          <button onClick={startNewModel} style={{padding:"6px 14px",borderRadius:6,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.15)",color:"white",cursor:"pointer",fontSize:11,fontWeight:600}} title="Clear and start a fresh model for a new customer">New model</button>
           <button onClick={()=>setShowModels(true)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"white",cursor:"pointer",fontSize:11,fontWeight:600}}>My Models</button>
           <button onClick={()=>{saveModel();const url=generateShareURL(drivers,g,kpis,removedKpis,displayOrder);if(url){navigator.clipboard.writeText(url).catch(()=>{});setToast("Saved & link copied!");}else{setToast("Saved!");}}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(59,130,246,0.4)",color:"white",cursor:"pointer",fontSize:11,fontWeight:600}}>Save & Share</button>
           <div style={{position:"relative"}} onMouseLeave={()=>{const m=document.getElementById("_exportMenu");if(m)m.style.display="none";}}>
@@ -2510,7 +2448,7 @@ function App(){
         {/* LEFT */}
         {panelOpen&&<><div style={{width:leftPanelWidth,minWidth:leftPanelWidth,maxWidth:600,background:"#f8fafc",borderRight:"1px solid #e2e8f0",padding:"12px",overflowY:"auto",maxHeight:"calc(100vh - 60px)"}}>
           <Inp label="Customer Name" value={g.customerName} onChange={ug("customerName")} placeholder="Enter customer name…"/>
-          <Sld label="Time Horizon" value={g.horizon} onChange={ug("horizon")} min={1} max={5} help="Model 1 to 5 years."/>
+          <Sld label="Time Horizon" value={g.horizon} onChange={ug("horizon")} min={1} max={5} help="Model 1 to 5 years." helpAlignRight/>
           {/* SHARED */}
           <div style={{marginBottom:8}}>
             <button onClick={()=>ts("_shared")} style={{width:"100%",display:"flex",alignItems:"center",padding:"5px 0",border:"none",background:"none",cursor:"pointer",borderBottom:"2px solid #475569",marginBottom:openSections._shared?6:0,textAlign:"left"}}>
@@ -2534,8 +2472,7 @@ function App(){
                   <option value="S$">S$ SGD - Singapore Dollar</option>
                 </select>
               </div>
-              <Sld label="Headcount Growth" value={g.headcountGrowth} onChange={ug("headcountGrowth")} min={0} max={0.2} step={0.005} format="pct" help="Optional — for internal scaling assumptions."/>
-              <Sld label="Adoption Ramp" value={g.adoptionRamp} onChange={ug("adoptionRamp")} min={1} max={12} help="Months to full adoption. Y1 benefits prorated. 6-9mo typical."/>
+              <Sld label="Adoption Ramp" value={g.adoptionRamp} onChange={ug("adoptionRamp")} min={1} max={12} help="Months to full adoption. Y1 benefits prorated. 6-9mo typical." helpAlignRight/>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,marginTop:4}}>
                 <button onClick={()=>setG(p=>({...p,discountEnabled:!p.discountEnabled}))} style={{width:34,height:18,borderRadius:9,border:"none",cursor:"pointer",position:"relative",background:g.discountEnabled?"#3b82f6":"#cbd5e1",transition:"background 0.2s",flexShrink:0}}>
                   <div style={{width:14,height:14,borderRadius:7,background:"white",position:"absolute",top:2,left:g.discountEnabled?18:2,transition:"left 0.2s",boxShadow:"0 1px 2px rgba(0,0,0,0.2)"}}/></button>
@@ -2573,40 +2510,7 @@ function App(){
             </div>);})}
           {displayOrder.length>0&&(<button onClick={()=>setShowLibrary(true)} style={{width:"100%",padding:"10px",border:"2px dashed #cbd5e1",borderRadius:8,background:"white",cursor:"pointer",fontSize:12,fontWeight:600,color:"#64748b",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
             <span style={{fontSize:16,lineHeight:1}}>+</span> Add Value Drivers</button>)}
-          {/* LEGACY CONSOLIDATION */}
-          <div style={{marginBottom:8,opacity:g.legacySavingsEnabled?1:0.5,transition:"opacity 0.2s"}}>
-            <button onClick={()=>ts("_l4")} style={{width:"100%",display:"flex",alignItems:"center",padding:"5px 0",border:"none",background:"none",cursor:"pointer",borderBottom:"2px solid "+(g.legacySavingsEnabled?"#10b981":"#94a3b8"),marginBottom:openSections._l4?6:0,textAlign:"left"}}>
-              <span onClick={e=>{e.stopPropagation();setG(p=>({...p,legacySavingsEnabled:!p.legacySavingsEnabled}));}} style={{cursor:"pointer",marginRight:6,display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0}} title={g.legacySavingsEnabled?"Hide from model":"Include in model"}>
-                {g.legacySavingsEnabled?(
-                  <svg width="20" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12c0 0 4-8 11-8s11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                ):(
-                  <svg width="20" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12c0 0 4-8 11-8s11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-                )}
-              </span>
-              <span style={{fontSize:10.5,fontWeight:700,color:g.legacySavingsEnabled?"#10b981":"#94a3b8",textTransform:"uppercase",letterSpacing:"0.04em",flex:1}}>Legacy Tool(s) Savings</span>
-              <Tip text="Enter the total annual cost of ALL tools being replaced or reduced each year — primary platform, add-ons, point solutions, everything. As departments migrate to Wrike, costs should decrease. Legacy Savings = Current Annual Cost minus Phase-Down Cost. FTE Avoidance is a separate benefit line item."/><span style={{fontSize:9,color:"#94a3b8",transition:"transform 0.2s",marginLeft:4}}>{openSections._l4?"\u25BC":"\u25C0"}</span></button>
-            {openSections._l4&&(<>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                <input type="checkbox" id="legacy-include" checked={g.legacySavingsEnabled} onChange={()=>setG(p=>({...p,legacySavingsEnabled:!p.legacySavingsEnabled}))} style={{accentColor:"#10b981",cursor:"pointer"}}/>
-                <label htmlFor="legacy-include" style={{fontSize:10,fontWeight:600,color:"#64748b",cursor:"pointer"}}>Include Legacy Tool Savings in model</label>
-              </div>
-              <Inp label="Current Annual Cost (do-nothing)" value={g.legacyFullCost} onChange={ug("legacyFullCost")} prefix={g.currency} help="What you pay per year for ALL legacy tools if nothing changes."/>
-              <div style={{fontSize:10,fontWeight:600,color:"#10b981",marginTop:4,marginBottom:4}}>Phase-Down Plan with Wrike <Tip text="Enter what you'll actually pay for legacy tools each year as you migrate. The SAVINGS is the difference between your current cost and this phase-down amount."/></div>
-              {Array.from({length:g.horizon},(_,i)=>{const sav=g.legacyFullCost-(g.legacyPhaseDown[i]||0);return(<div key={i}><Inp label={`Year ${i+1} Legacy Cost (with Wrike)`} value={g.legacyPhaseDown[i]||0} onChange={v=>setPhaseDown(i,v)} prefix={g.currency} help={`What you'll still pay in Year ${i+1}. Savings: $${g.legacyFullCost.toLocaleString()} - $${(g.legacyPhaseDown[i]||0).toLocaleString()} = $${Math.max(0,sav).toLocaleString()}`}/></div>);})}
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,marginTop:8}}>
-                <input type="checkbox" id="fte-include" checked={g.fteAvoidanceEnabled} onChange={()=>setG(p=>({...p,fteAvoidanceEnabled:!p.fteAvoidanceEnabled}))} style={{accentColor:"#10b981",cursor:"pointer"}}/>
-                <label htmlFor="fte-include" style={{fontSize:10,fontWeight:600,color:"#64748b",cursor:"pointer"}}>Include FTE Avoidance in model</label>
-              </div>
-              <Inp label="FTEs Avoided / Year" value={g.fteAvoided} onChange={ug("fteAvoided")} step={0.5} suffix="FTEs" help="Hires avoided because Wrike absorbs workload growth."/>
-              <Inp label="Cost per FTE (for FTE Avoidance)" value={g.fteCost} onChange={ug("fteCost")} prefix={g.currency} suffix="/yr" help="Fully-loaded cost used for FTE Avoidance benefit only. Value drivers use their own FTE cost."/>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-                <button onClick={()=>setG(p=>({...p,fteAvoidY1:!p.fteAvoidY1}))} style={{width:34,height:18,borderRadius:9,border:"none",cursor:"pointer",position:"relative",background:g.fteAvoidY1?"#3b82f6":"#cbd5e1",transition:"background 0.2s",flexShrink:0}}>
-                  <div style={{width:14,height:14,borderRadius:7,background:"white",position:"absolute",top:2,left:g.fteAvoidY1?18:2,transition:"left 0.2s",boxShadow:"0 1px 2px rgba(0,0,0,0.2)"}}/></button>
-                <span style={{fontSize:10,fontWeight:600,color:"#64748b"}}>Include Y1 FTE avoidance</span>
-                <Tip text="When ON, Y1 FTE savings prorated by adoption ramp. Default OFF — savings start Y2."/></div>
-            </>)}
-          </div>
-          {/* WRIKE INVESTMENT - per year costs */}
+          {/* WRIKE INVESTMENT */}
           <div style={{marginBottom:8}}>
             <button onClick={()=>ts("_wrike")} style={{width:"100%",display:"flex",alignItems:"center",padding:"5px 0",border:"none",background:"none",cursor:"pointer",borderBottom:"2px solid #3b82f6",marginBottom:openSections._wrike?6:0,textAlign:"left"}}>
               <span style={{fontSize:10.5,fontWeight:700,color:"#3b82f6",textTransform:"uppercase",letterSpacing:"0.04em",flex:1}}>Wrike Investment</span>
@@ -2645,7 +2549,7 @@ function App(){
             <Stat label="Payback" value={model.pbm?`${model.pbm}mo`:"N/A"} color="#1e293b" bg="#f5f3ff" sub={model.pbm?`~${(model.pbm/12).toFixed(1)} years`:""}/>
           </div>
           <div style={{display:"flex",gap:2,marginBottom:14,background:"#f1f5f9",borderRadius:6,padding:2}}>
-            {tabs.map(t=>{const c=TC[t.id];const active=tab===t.id;return<button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"7px 8px",borderRadius:4,border:"none",cursor:"pointer",fontSize:11,fontWeight:600,background:active?"white":"transparent",color:active?c:"#94a3b8",boxShadow:active?"0 1px 3px rgba(0,0,0,0.1)":"none",borderBottom:active?`2.5px solid ${c}`:"2.5px solid transparent",transition:"all 0.15s"}}>{t.label}</button>;})}
+            {tabs.map(t=>{const c=TC[t.id];const active=tab===t.id;return<button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"7px 8px",borderRadius:4,border:"none",cursor:"pointer",fontSize:11,fontWeight:600,fontFamily:"'Montserrat',sans-serif",background:active?"white":"transparent",color:active?c:"#94a3b8",boxShadow:active?"0 1px 3px rgba(0,0,0,0.1)":"none",borderBottom:active?`2.5px solid ${c}`:"2.5px solid transparent",transition:"all 0.15s"}}>{t.label}</button>;})}
           </div>
 
           {/* DRIVERS TAB */}
@@ -2664,7 +2568,7 @@ function App(){
               </div>
               {(()=>{let currentSectionColor="#475569";return displayOrder.map((item,i)=>{
                 if(item.type==="section"){currentSectionColor=CAT_COLORS[item.category]||"#475569";return(<div key={"sec_"+item.category+i} style={{fontSize:13,fontWeight:700,color:currentSectionColor,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:i===0?0:12,marginBottom:6,borderBottom:`2px solid ${currentSectionColor}`,paddingBottom:4}}>{item.category}</div>);}
-                const d=drivers.find(x=>x.id===item.id);if(!d||!d.enabled)return null;const v=model.lt[d.id]||0;const h=model.lth[d.id]||0;const hasHours=(d.type==="time"||d.type==="incident");const displayVal=showHours&&hasHours?h:v;const barColor=showHours&&hasHours?"#7c3aed":currentSectionColor;const allVals=el.map(d2=>showHours&&(d2.type==="time"||d2.type==="incident")?model.lth[d2.id]||0:model.lt[d2.id]||0);const maxVal=Math.max(...allVals,g.legacySavingsEnabled?model.lt._l4||0:0,g.fteAvoidanceEnabled?model.lt._fte||0:0);const w=maxVal>0?Math.max(3,(displayVal/maxVal)*100):0;
+                const d=drivers.find(x=>x.id===item.id);if(!d||!d.enabled)return null;const v=model.lt[d.id]||0;const h=model.lth[d.id]||0;const hasHours=(d.type==="time"||d.type==="incident");const displayVal=showHours&&hasHours?h:v;const barColor=showHours&&hasHours?"#7c3aed":currentSectionColor;const allVals=el.map(d2=>showHours&&(d2.type==="time"||d2.type==="incident")?model.lth[d2.id]||0:model.lt[d2.id]||0);const maxVal=Math.max(...allVals);const w=maxVal>0?Math.max(3,(displayVal/maxVal)*100):0;
                 return(<div key={d.id} style={{marginBottom:7}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
                     <div style={{display:"flex",alignItems:"center"}}><span style={{fontSize:11,color:"#1e293b",fontWeight:500}}>{d.name}</span><Tip text={d.tip}/></div>
@@ -2672,18 +2576,6 @@ function App(){
                   </div>
                   <div style={{height:7,background:"#f1f5f9",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:`${w}%`,background:barColor,borderRadius:4,transition:"width 0.4s"}}/></div>
                 </div>);})})()}
-              {g.legacySavingsEnabled&&(<div style={{marginBottom:7,opacity:showHours?0.4:1}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-                  <span style={{fontSize:11,color:"#1e293b",fontWeight:500}}>Legacy Tool(s) Savings</span>
-                  <span style={{fontSize:12,fontWeight:700,color:"#10b981",fontFamily:"'Montserrat',sans-serif"}}>{fmtK(model.lt._l4)}</span></div>
-                <div style={{height:7,background:"#f1f5f9",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:`${!showHours&&maxLev>0?Math.max(3,(model.lt._l4/maxLev)*100):0}%`,background:"#10b981",borderRadius:4,transition:"width 0.4s"}}/></div>
-              </div>)}
-              {g.fteAvoidanceEnabled&&(<div style={{marginBottom:7,opacity:showHours?0.4:1}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
-                  <span style={{fontSize:11,color:"#1e293b",fontWeight:500}}>FTE Avoidance</span>
-                  <span style={{fontSize:12,fontWeight:700,color:"#059669",fontFamily:"'Montserrat',sans-serif"}}>{fmtK(model.lt._fte)}</span></div>
-                <div style={{height:7,background:"#f1f5f9",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:`${!showHours&&maxLev>0?Math.max(3,(model.lt._fte/maxLev)*100):0}%`,background:"#059669",borderRadius:4,transition:"width 0.4s"}}/></div>
-              </div>)}
             </div>
             <div style={{background:"#f8fafc",borderRadius:8,padding:"14px 16px",border:"1px solid #e2e8f0"}}>
               <div style={{fontSize:12,fontWeight:700,color:"#334155",marginBottom:10}}>Annual Net Benefit</div>
@@ -2728,8 +2620,6 @@ function App(){
                     <td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0",color:"#dc2626"}}>{fmt(total)}</td>
                   </tr>);})()}                <tr><td colSpan={model.years.length+2} style={{padding:"8px 10px 3px",fontWeight:800,fontSize:9,color:"#059669",textTransform:"uppercase",borderBottom:"1px solid #e2e8f0"}}>BENEFITS</td></tr>
                 {displayOrder.filter(x=>x.type==="driver").map(item=>{const d=drivers.find(x=>x.id===item.id);if(!d||!d.enabled)return null;const total=model.years.reduce((a,y)=>a+(y.lv[d.id]||0),0);return(<tr key={d.id}><td style={{padding:"4px 10px",color:"#334155",borderBottom:"1px solid #f1f5f9",fontSize:10}}>{d.name}</td>{model.years.map(y=>(<td key={y.year} style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,borderBottom:"1px solid #f1f5f9"}}>{fmt(y.lv[d.id]||0)}</td>))}<td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0"}}>{fmt(total)}</td></tr>);})}
-                {g.legacySavingsEnabled&&(<tr><td style={{padding:"4px 10px",color:"#334155",borderBottom:"1px solid #f1f5f9",fontSize:10}}>Legacy Tool(s) Savings</td>{model.years.map(y=>(<td key={y.year} style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,borderBottom:"1px solid #f1f5f9"}}>{fmt(y.legacySav)}</td>))}<td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0"}}>{fmt(model.lt._l4)}</td></tr>)}
-                {g.fteAvoidanceEnabled&&(<tr><td style={{padding:"4px 10px",color:"#334155",borderBottom:"1px solid #f1f5f9",fontSize:10}}>FTE Avoidance</td>{model.years.map(y=>(<td key={y.year} style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,borderBottom:"1px solid #f1f5f9"}}>{fmt(y.fteSav)}</td>))}<td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0"}}>{fmt(model.lt._fte)}</td></tr>)}
                 <tr style={{background:"#f0fdf4"}}><td style={{padding:"4px 10px",fontWeight:700,color:"#059669",borderBottom:"1px solid #f1f5f9",fontSize:10}}>Total Benefit</td>{model.years.map(y=>(<td key={y.year} style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",color:"#059669"}}>{fmt(y.totalBenefit)}</td>))}<td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0",color:"#059669"}}>{fmt(model.years.reduce((a,y)=>a+y.totalBenefit,0))}</td></tr>
                 <tr><td colSpan={model.years.length+2} style={{padding:"8px 10px 3px",fontWeight:800,fontSize:9,color:"#1e3a5f",textTransform:"uppercase",borderBottom:"1px solid #e2e8f0"}}>NET</td></tr>
                 {[{l:"Net Benefit",k:"net"},...(g.discountEnabled?[{l:"PV Net Benefit",k:"pvNet"}]:[])].map((row,i)=>{const total=model.years.reduce((a,y)=>a+y[row.k],0);return(<tr key={`n${i}`}><td style={{padding:"4px 10px",fontWeight:700,borderBottom:"1px solid #f1f5f9",fontSize:10}}>{row.l}</td>{model.years.map(y=>(<td key={y.year} style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",color:y[row.k]>=0?"#059669":"#dc2626"}}>{fmt(y[row.k])}</td>))}<td style={{padding:"4px 10px",textAlign:"right",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,borderBottom:"1px solid #f1f5f9",borderLeft:"2px solid #e2e8f0",color:total>=0?"#059669":"#dc2626"}}>{fmt(total)}</td></tr>);})}
@@ -2800,7 +2690,7 @@ function App(){
       {/* SHARE MODAL */}
       {shareModal&&<Modal onClose={()=>setShareModal(false)}>
         <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Share This Model</div>
-        <div style={{fontSize:11,color:"#64748b",marginBottom:12,lineHeight:1.5}}>Anyone who opens this link will see the model with all your current inputs, value drivers, and assumptions pre-loaded. They can adjust values but their changes won't affect your link.</div>
+        <div style={{fontSize:11,color:"#64748b",marginBottom:12,lineHeight:1.5}}>Anyone who opens this link will see the model with all your current inputs, value drivers, and assumptions pre-loaded. They can adjust values but their changes won't affect your link. <strong>Tip:</strong> Before building the next customer's model, click <strong>New model</strong> in the header so each shared link stays unique.</div>
         <div style={{position:"relative",marginBottom:12}}>
           <textarea readOnly value={shareURL} style={{width:"100%",padding:"10px",border:"1px solid #cbd5e1",borderRadius:6,fontSize:10,fontFamily:"'Montserrat',sans-serif",color:"#334155",background:"#f8fafc",outline:"none",resize:"none",height:70,boxSizing:"border-box"}} onClick={e=>e.target.select()}/>
         </div>
